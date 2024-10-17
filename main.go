@@ -14,23 +14,24 @@ import (
 	"go_final_project/handlers"
 )
 
+// init loads enviroment variables
 func init() {
 	if err := godotenv.Load(); err != nil {
-		log.Printf("Error loading .env file: %v", err)
+		log.Fatalf("Error loading .env file: %v", err)
 	}
 }
 
+// fileServer is handle func for frontend files
 func fileServer(path string) http.Handler {
 	fs := http.FileServer(http.Dir(path))
-	return fs
+	return http.StripPrefix("/", fs)
 }
 
 func main() {
 
 	db, err := database.NewDatabase()
 	if err != nil {
-		log.Printf("failed to set up database: %v", err)
-		return
+		log.Fatalf("failed to set up database: %v", err)
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
@@ -39,20 +40,24 @@ func main() {
 	}()
 	log.Println("Database setup successfully")
 
+	// get enviroment variable for port
 	portStr := os.Getenv("TODO_PORT")
 	var port int
 
+	// get port number if env variable is empty
 	if portStr == "" {
 		port = 7540
 	} else {
 		port, err = strconv.Atoi(portStr)
 		if err != nil {
-			log.Printf("Invalid port number: %v", err)
+			log.Fatalf("Invalid port number: %v", err)
 		}
 	}
 
+	// Define path for frontend files
 	webDir := "./web"
 
+	// register API handlers
 	r := chi.NewRouter()
 
 	r.Handle("/*", fileServer(webDir))
@@ -78,9 +83,12 @@ func main() {
 		handlers.DeleteTaskHandler(w, r, db)
 	})
 
+	// start server
 	address := fmt.Sprintf(":%d", port)
 	log.Printf("Starting server on http://localhost%s\n", address)
 	if err := http.ListenAndServe(address, r); err != nil {
-		log.Printf("Server failed to start: %v\n", err)
+		log.Fatalf("Server failed to start: %v\n", err)
+		return
 	}
+
 }
