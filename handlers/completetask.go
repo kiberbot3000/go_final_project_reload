@@ -15,29 +15,29 @@ import (
 
 func DoneTaskHandler(w http.ResponseWriter, r *http.Request, db *database.Database) {
 	if r.Method != http.MethodPost {
-		SendErrorResponse(w, "DoneTaskHandler: Method not allowed", http.StatusBadRequest)
+		SendErrorResponse(w, "DoneTaskHandler: Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	idTask := r.FormValue("id")
 	if idTask == "" {
-		SendErrorResponse(w, "DoneTaskHandler: No ID provided", http.StatusInternalServerError)
+		SendErrorResponse(w, "DoneTaskHandler: No ID provided", http.StatusBadRequest)
 		return
 	}
 
 	idTaskParsed, err := strconv.Atoi(idTask)
 	if err != nil {
-		SendErrorResponse(w, "DoneTaskHandler: Invalid ID format", http.StatusOK)
+		SendErrorResponse(w, "DoneTaskHandler: Invalid ID format", http.StatusBadRequest)
 		return
 	}
 
 	var task tasks.Task
 	task, err = db.GetTaskByID(idTaskParsed)
 	if err == sql.ErrNoRows {
-		SendErrorResponse(w, fmt.Errorf("DoneTaskHandler: failed to find task: %w", err).Error(), http.StatusBadRequest)
+		SendErrorResponse(w, fmt.Errorf("DoneTaskHandler: failed to find task: %w", err).Error(), http.StatusNotFound)
 		return
 	} else if err != nil {
-		SendErrorResponse(w, fmt.Errorf("DoneTaskHandler: failed to retrieve task: %w", err).Error(), http.StatusOK)
+		SendErrorResponse(w, fmt.Errorf("DoneTaskHandler: failed to retrieve task: %w", err).Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -46,7 +46,7 @@ func DoneTaskHandler(w http.ResponseWriter, r *http.Request, db *database.Databa
 	if task.Repeat != "" {
 		newTaskDate, err := dates.NextDate(now, task.Date, task.Repeat)
 		if err != nil {
-			SendErrorResponse(w, "DoneTaskHandler: Invalid repeat pattern", http.StatusInternalServerError)
+			SendErrorResponse(w, "DoneTaskHandler: Invalid repeat pattern", http.StatusBadRequest)
 			return
 		}
 
@@ -54,19 +54,20 @@ func DoneTaskHandler(w http.ResponseWriter, r *http.Request, db *database.Databa
 
 		err = db.EditTask(task)
 		if err != nil {
-			SendErrorResponse(w, fmt.Errorf("DoneTaskHandler: failed to update task: %w", err).Error(), http.StatusBadRequest)
+			SendErrorResponse(w, fmt.Errorf("DoneTaskHandler: failed to update task: %w", err).Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
+
 		err := db.DeleteTask(idTaskParsed)
 		if err != nil {
-			SendErrorResponse(w, fmt.Errorf("DoneTaskHandler: failed to delete task: %w", err).Error(), http.StatusOK)
+			SendErrorResponse(w, fmt.Errorf("DoneTaskHandler: failed to delete task: %w", err).Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	_, err = w.Write([]byte(`{}`))
 	if err != nil {
 		log.Printf("DoneTaskHandler: failed to write response: %v", err)
