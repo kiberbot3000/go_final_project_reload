@@ -11,8 +11,6 @@
 8.Реализована обработка параметров поиска в маршруте Get("/api/tasks").
 TODO_PASSWORD=1234
 
-
-
 Запуск приложения:
 с  Docker:
 docker build -t todoserver:v1 .
