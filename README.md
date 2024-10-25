@@ -16,7 +16,6 @@ TODO_PASSWORD=1234
 docker build -t todoserver:v1 .
 docker run -d --name todo -p 7540:7540 -e TODO_DBFILE=scheduler.db -e TODO_PASSWORD=1234 -v scheduler.db todoserver:v1
 
-
 без  Docker:
 go mod tidy
 go build .
