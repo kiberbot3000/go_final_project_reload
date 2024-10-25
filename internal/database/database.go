@@ -50,6 +50,8 @@ func InitializeDatabase() *sql.DB {
 		}
 
 		return db
+	} else {
+		log.Fatal(err)
 	}
 	db, err := sql.Open("sqlite", "scheduler.db")
 	if err != nil {

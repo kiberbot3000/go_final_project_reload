@@ -29,6 +29,7 @@ func HandleNextDate(w http.ResponseWriter, r *http.Request) {
 	nextdate, err := donetaskrepeat.NextDate(now, date, strRepeat)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 	_, err = w.Write([]byte(nextdate))
 	if err != nil {
@@ -39,8 +40,8 @@ func HandleNextDate(w http.ResponseWriter, r *http.Request) {
 func HandlePostGetPutRequests(store store.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var t tasks.Task
-		switch {
-		case r.Method == http.MethodPost:
+		switch r.Method {
+		case http.MethodPost:
 			err := json.NewDecoder(r.Body).Decode(&t)
 			if err != nil {
 				http.Error(w, `{"error":"ошибка десериализации JSON"}`, http.StatusBadRequest)
@@ -60,7 +61,7 @@ func HandlePostGetPutRequests(store store.Store) http.HandlerFunc {
 				return
 			}
 
-		case r.Method == http.MethodGet:
+		case http.MethodGet:
 			id := r.URL.Query().Get("id")
 			task, err := store.GetTask(id)
 			if err != nil {
@@ -73,7 +74,7 @@ func HandlePostGetPutRequests(store store.Store) http.HandlerFunc {
 				return
 			}
 
-		case r.Method == http.MethodPut:
+		case http.MethodPut:
 			err := json.NewDecoder(r.Body).Decode(&t)
 			if err != nil {
 				http.Error(w, `{"error":"ошибка десериализации JSON"}`, http.StatusBadRequest)
@@ -90,7 +91,7 @@ func HandlePostGetPutRequests(store store.Store) http.HandlerFunc {
 				return
 			}
 
-		case r.Method == http.MethodDelete:
+		case http.MethodDelete:
 			id := r.URL.Query().Get("id")
 			err := store.DeleteTask(id)
 			if err != nil {
@@ -102,6 +103,10 @@ func HandlePostGetPutRequests(store store.Store) http.HandlerFunc {
 				http.Error(w, `{"error":"Ошибка кодирования JSON"}`, http.StatusInternalServerError)
 				return
 			}
+
+		default:
+			http.Error(w, `{"error":"Ошибка метода запроса"}`, http.StatusBadRequest)
+			return
 		}
 	}
 }
@@ -112,6 +117,7 @@ func HandleTasksGet(store store.Store) http.HandlerFunc {
 		tasksList, err := store.SearchTask(search)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 		response := map[string][]tasks.Task{
 			"tasks": tasksList,

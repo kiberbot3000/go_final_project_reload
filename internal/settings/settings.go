@@ -7,9 +7,7 @@ import (
 const Template = "20060102"
 
 type TodoEnv struct {
-	Port     string
-	DBFile   string
-	Password string
+	Port string
 }
 
 func checkENV(environment, baseValue string) string {
@@ -21,12 +19,8 @@ func checkENV(environment, baseValue string) string {
 
 func GetEnv() *TodoEnv {
 	port := checkENV("TODO_PORT", "7540")
-	db := checkENV("TODO_DBFILE", "")
-	password := checkENV("TODO_PASSWORD", "")
 
 	return &TodoEnv{
-		Port:     port,
-		DBFile:   db,
-		Password: password,
+		Port: port,
 	}
 }
